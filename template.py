@@ -5,6 +5,7 @@
 #
 ################################################################################
 from search import *
+import sys
 
 #################
 # Problem class #
@@ -188,7 +189,6 @@ def maxValueTable(listState):
 	firstRun = True
 	maxValueTable = None
 	for state in listState:
-		#print(state.value)
 		if(firstRun):
 			maxValueTable = state
 			firstRun = False
@@ -219,8 +219,11 @@ def fiveMaxValueTables(listState):
 
 def printState(state):
 	print(state.value)
-	for e in state.tables:
-		print(e)
+	for table in state.tables:
+		for people in table:
+			sys.stdout.write(str(people))
+			sys.stdout.write(" ")
+		sys.stdout.write("\n")
 	print("")
 
 ################
@@ -254,8 +257,8 @@ if __name__ == '__main__':
 	initState = State(wedding.initial[0],wedding.initial[1],wedding.initial[2],wedding.initial[3], wedding.value(wedding.initial[3]))
 	printState(initState)
 
-	node = maxvalue(wedding, 100)
-	printState(node)
+	#node = maxvalue(wedding, 100)
+	#printState(node)
 
 	node2 = randomized_maxvalue(wedding, 100)	
 	printState(node2)
