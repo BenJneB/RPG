@@ -13,28 +13,36 @@ import sys
 
 class Wedding(Problem):
 	def __init__(self, init):
-		self.affinitiesTable = []
-		self.numberOfPeople = 0
-		self.numberOfTable = 0
+		self.affinitiesTable = [] # The affinity matrix
+		self.numberOfPeople = 0 
+		self.numberOfTable = 0 
 		self.createTablesAssignment(init)
-		self.allPossibleActions = self.allPossibleActions()
+		self.allPossibleActions = self.allPossibleActions() # Set of all possible actions
+		self.actionsAlreadyDone = [] # Set of all actions that have been done. 
+
 
 	def successor(self, state):
 		successors = []
 		actionList = self.allPossibleActions
+		lastValue = state.value
+		lastAction = state.m
+		lastState = state.tables
 		for action in actionList:
-			peopleLine1 = action[0][0]
-			peopleCol1 = action[0][1]
-			peopleLine2 = action[1][0]
-			peopleCol2 = action[1][1]
-			swappedPeople1 = state[peopleLine1][peopleCol1]
-			swappedPeople2 = state[peopleLine2][peopleCol2]
-			state[peopleLine1][peopleCol1] = swappedPeople2
-			state[peopleLine2][peopleCol2] = swappedPeople1
-			newState = clone(state)
-			yield [self.numberOfPeople,self.numberOfTable,action,newState]
-			state[peopleLine1][peopleCol1] = swappedPeople1
-			state[peopleLine2][peopleCol2] = swappedPeople2
+			#if action not in self.actionsAlreadyDone:
+			if action != lastAction: # Don't want to do the action than the last one. Avoiding loop.
+				peopleLine1 = action[0][0]
+				peopleCol1 = action[0][1]
+				peopleLine2 = action[1][0]
+				peopleCol2 = action[1][1]
+				swappedPeople1 = lastState[peopleLine1][peopleCol1]
+				swappedPeople2 = lastState[peopleLine2][peopleCol2]
+				lastState[peopleLine1][peopleCol1] = swappedPeople2
+				lastState[peopleLine2][peopleCol2] = swappedPeople1
+				newState = clone(lastState)
+				if(not(self.value(newState) < lastValue-30)):
+					yield [self.numberOfPeople,self.numberOfTable,action,newState]
+				lastState[peopleLine1][peopleCol1] = swappedPeople1
+				lastState[peopleLine2][peopleCol2] = swappedPeople2
 
 	def value(self, state):
 		affinitiesTable = self.affinitiesTable
@@ -172,7 +180,7 @@ class State:
 		self.value = value
 
 	def expand(self, problem):
-		for (numberOfPeople,numberOfTable,move,tablesAssignment) in problem.successor(self.tables):
+		for (numberOfPeople,numberOfTable,move,tablesAssignment) in problem.successor(self):
 			yield State(numberOfPeople, numberOfTable, move, tablesAssignment, problem.value(tablesAssignment))
 
 ######################
@@ -194,6 +202,9 @@ def maxValueTable(listState):
 			firstRun = False
 		elif (maxValueTable.value < state.value):
 			maxValueTable = state
+		elif (maxValueTable.value == state.value):
+			choice = random.choice([maxValueTable,state])
+			maxValueTable = choice
 	return maxValueTable
 
 def fiveMaxValueTables(listState):
@@ -215,16 +226,23 @@ def fiveMaxValueTables(listState):
 				if elem == min(listValues):
 					listValues[j] = state.value
 				j += 1
+		elif (min(listValues) == state.value):
+			i = 0
+			for elem in maxValueTables:
+				if (elem.value == min(listValues)):
+					choice = random.choice([maxValueTables[i],state])
+					maxValueTables[i] = choice
+				i += 1 
 	return maxValueTables
 
 def printState(state):
 	print(state.value)
 	for table in state.tables:
+		table.sort()
 		for people in table:
 			sys.stdout.write(str(people))
 			sys.stdout.write(" ")
 		sys.stdout.write("\n")
-	print("")
 
 ################
 # Local Search #
@@ -248,6 +266,7 @@ def maxvalue(problem, limit=100, callback=None):
     	if callback is not None:
     		callback(current)
     	current = maxValueTable(list(current.expand(problem)))
+    	wedding.actionsAlreadyDone.append(current.m)
     	if current.value > best.value:
     		best = current
     return best
@@ -257,10 +276,10 @@ if __name__ == '__main__':
 	initState = State(wedding.initial[0],wedding.initial[1],wedding.initial[2],wedding.initial[3], wedding.value(wedding.initial[3]))
 	printState(initState)
 
-	#node = maxvalue(wedding, 100)
-	#printState(node)
+	node = maxvalue(wedding, 100)
+	printState(node)
 
-	node2 = randomized_maxvalue(wedding, 100)	
-	printState(node2)
+	#node2 = randomized_maxvalue(wedding, 100)	
+	#printState(node2)
 	#state = node.state
 	#print(state)
