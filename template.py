@@ -12,14 +12,15 @@ from search import *
 
 class Wedding(Problem):
 	def __init__(self, init):
-		self.createTablesAssignment(init)
 		self.affinitiesTable = []
 		self.numberOfPeople = 0
 		self.numberOfTable = 0
+		self.createTablesAssignment(init)
+		self.allPossibleActions = self.allPossibleActions()
 
 	def successor(self, state):
 		successors = []
-		actionList = allPossibleActions(state)
+		actionList = self.allPossibleActions
 		for action in actionList:
 			peopleLine1 = action[0][0]
 			peopleCol1 = action[0][1]
@@ -29,7 +30,8 @@ class Wedding(Problem):
 			swappedPeople2 = state[peopleLine2][peopleCol2]
 			state[peopleLine1][peopleCol1] = swappedPeople2
 			state[peopleLine2][peopleCol2] = swappedPeople1
-			yield [self.numberOfPeople,self.numberOfTable,action,state]
+			newState = clone(state)
+			yield [self.numberOfPeople,self.numberOfTable,action,newState]
 			state[peopleLine1][peopleCol1] = swappedPeople1
 			state[peopleLine2][peopleCol2] = swappedPeople2
 
@@ -72,7 +74,7 @@ class Wedding(Problem):
 				while(i<len(affinitiesColTable)):
 					self.numberOfPeople += affinitiesColTable[i]
 					i += 1
-			elif (numberOfLine == 1): # Save the number of table available
+			elif (numberOfLine == 1): # Save the number of table
 				self.numberOfTable = affinitiesColTable[0]
 				i=1
 				while(i<len(affinitiesColTable)):
@@ -133,6 +135,28 @@ class Wedding(Problem):
 			peopleLineIndex += 1
 		self.initial = (self.numberOfPeople, self.numberOfTable, [[0,0],[0,0]],tablesAssignment)
 
+	"""Return all possible actions, An action is a 2-uple containing the row and column of peoples who are going to be swapped"""
+	"""action = [[row1,column1],[row2,column2]]"""
+	def allPossibleActions(self):
+		tableMaxPeople = self.numberOfPeople/self.numberOfTable
+		actionList = []
+	
+		line1 = 0
+		while(line1<self.numberOfTable-1):
+			col1 = 0
+			while (col1 < tableMaxPeople):
+				line2 = line1+1
+				while(line2 < self.numberOfTable):
+					col2 = 0
+					while(col2 < tableMaxPeople):
+						action = [[line1,col1],[line2,col2]]
+						actionList.append(action)
+						col2 += 1
+					line2 += 1
+				col1 += 1
+			line1 += 1
+		return actionList
+
 ###############
 # State class #
 ###############
@@ -147,53 +171,93 @@ class State:
 		self.value = value
 
 	def expand(self, problem):
-		for (numberOfPeople,numberOfTable,move,tablesAssignment) in problem.successor(self.state):
-			yield State(numberOfPeople, numberOfTable, move, tablesAssignment, value(tablesAssignment))
+		for (numberOfPeople,numberOfTable,move,tablesAssignment) in problem.successor(self.tables):
+			yield State(numberOfPeople, numberOfTable, move, tablesAssignment, problem.value(tablesAssignment))
 
 ######################
 # Auxiliary Function #
 ######################
 
-"""Return all possible actions, An action is a 2-uple containing the row and column of peoples who are going to be swapped"""
-"""action = [[row1,column1],[row2,column2]]"""
-def allPossibleActions(state):
-	numberOfTable = len(state)
-	tableMaxPeople = len(state[0])
-	numberOfPeople = numberOfTable*tableMaxPeople
-	actionList = []
-	
-	line1 = 0
-	while(line1<numberOfTable-1):
-		col1 = 0
-		while (col1 < tableMaxPeople):
-			line2 = line1+1
-			while(line2 < numberOfTable):
-				col2 = 0
-				while(col2 < tableMaxPeople):
-					action = [[line1,col1],[line2,col2]]
-					actionList.append(action)
-					col2 += 1
-				line2 += 1
-			col1 += 1
-		line1 += 1
-	return actionList
+def clone(List):
+	cloneList = []
+	for line in List:
+		cloneList.append(list(line))
+	return cloneList
+
+def maxValueTable(listState):
+	firstRun = True
+	maxValueTable = None
+	for state in listState:
+		#print(state.value)
+		if(firstRun):
+			maxValueTable = state
+			firstRun = False
+		elif (maxValueTable.value < state.value):
+			maxValueTable = state
+	return maxValueTable
+
+def fiveMaxValueTables(listState):
+	firstRun = True
+	maxValueTables = []
+	listValues = []
+	for state in listState:
+		if(len(maxValueTables) < 5):
+			maxValueTables.append(state)
+			listValues.append(state.value)
+		elif (min(listValues) < state.value):
+			i = 0
+			for elem in maxValueTables:
+				if (elem.value == min(listValues)):
+					maxValueTables[i] = state
+				i += 1 
+			j = 0
+			for elem in listValues:
+				if elem == min(listValues):
+					listValues[j] = state.value
+				j += 1
+	return maxValueTables
+
+def printState(state):
+	print(state.value)
+	for e in state.tables:
+		print(e)
+	print("")
 
 ################
 # Local Search #
 ################
 
 def randomized_maxvalue(problem, limit=100, callback=None):
-	pass
+    current = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3], problem.value(problem.initial[3]))
+    best = current
+    for step in range(limit):
+    	if callback is not None:
+    		callback(current)
+    	current = random.choice(fiveMaxValueTables(list(current.expand(problem))))
+    	if current.value > best.value:
+    		best = current
+    return best
 
 def maxvalue(problem, limit=100, callback=None):
-	pass
+    current = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3], problem.value(problem.initial[3]))
+    best = current
+    for step in range(limit):
+    	if callback is not None:
+    		callback(current)
+    	current = maxValueTable(list(current.expand(problem)))
+    	if current.value > best.value:
+    		best = current
+    return best
 
 if __name__ == '__main__':
 	wedding = Wedding(sys.argv[1])
-	print(wedding.initial)
+	initState = State(wedding.initial[0],wedding.initial[1],wedding.initial[2],wedding.initial[3], wedding.value(wedding.initial[3]))
+	printState(initState)
 
-	node = randomized_maxvalue(wedding, 100)	
-	# node = maxvalue(wedding, 100)
-	
-	state = node.state
-	print(state)
+	node = maxvalue(wedding, 100)
+	printState(node)
+
+	node2 = randomized_maxvalue(wedding, 100)	
+	printState(node2)
+	#state = node.state
+	#print(state)
