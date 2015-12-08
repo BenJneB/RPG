@@ -36,8 +36,6 @@ def get_clauses(merchant, level):
 
 		for equip in listEquip2:
 			clauses.append([-equip.index,-equip.conflicts.index])
-			for abi in equip.provides:
-				clauses.append([-equip.index,abi.index])
 
 		print(clauses)
 		return clauses
