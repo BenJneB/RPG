@@ -1,3 +1,4 @@
+"""Group #16 --- Fichefet Pierrick --- Daubry Benjamin"""
 #! /usr/bin/env python3
 ################################################################################
 #
@@ -36,15 +37,15 @@ class Wedding(Problem):
 			peopleCol2 = action[1][1]
 			swappedPeople1 = lastState[peopleLine1][peopleCol1]
 			swappedPeople2 = lastState[peopleLine2][peopleCol2]
-			if(lastPeople != [swappedPeople1,swappedPeople2] and lastPeople != [swappedPeople2,swappedPeople1]):
+			#if(lastPeople != [swappedPeople1,swappedPeople2] and lastPeople != [swappedPeople2,swappedPeople1]):
 			#if ([swappedPeople1,swappedPeople2] not in self.actionsAlreadyDone) and ([swappedPeople2,swappedPeople1] not in self.actionsAlreadyDone):
-				newState = clone(lastState)
-				newState[peopleLine1][peopleCol1] = swappedPeople2
-				newState[peopleLine2][peopleCol2] = swappedPeople1
-				newState[peopleLine1].sort()
-				newState[peopleLine2].sort()
-				#if(not(self.value(newState) < lastValue-30)):
-				yield [self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
+			newState = clone(lastState)
+			newState[peopleLine1][peopleCol1] = swappedPeople2
+			newState[peopleLine2][peopleCol2] = swappedPeople1
+			newState[peopleLine1].sort()
+			newState[peopleLine2].sort()
+			#if(not(self.value(newState) < lastValue-30)):
+			yield [self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
 
 	def value(self, state):
 		affinitiesTable = self.affinitiesTable
@@ -68,36 +69,28 @@ class Wedding(Problem):
 		for line in f:
 			affinitiesColTable = []
 			minus = False # check Whether we have a negative value or not.
-			for col in line:
-				if(col != " " and col != '\n' and col != "-"):
-					if(minus):
-						affinitiesColTable.append("-"+col)
-						minus = False
-					else:
-						affinitiesColTable.append(col)
-				elif(col == "-"):
-					minus = True
-				numberOfColumn += 1
-
-			if (numberOfLine == 0): # Save the number of people
-				self.numberOfPeople = affinitiesColTable[0]
-				i=1
-				while(i<len(affinitiesColTable)):
-					self.numberOfPeople += affinitiesColTable[i]
-					i += 1
-			elif (numberOfLine == 1): # Save the number of table
-				self.numberOfTable = affinitiesColTable[0]
-				i=1
-				while(i<len(affinitiesColTable)):
-					self.numberOfTable += affinitiesColTable[i]
-					i += 1
-			else:	
-				affinitiesTable.append(affinitiesColTable)
+			if(numberOfLine == 0):
+				self.numberOfPeople = line
+			elif(numberOfLine == 1):
+				self.numberOfTable = line
+			else:
+				for col in line:
+					if(col != " " and col != '\n' and col != "-"):
+						if(minus):
+							affinitiesColTable.append("-"+col)
+							minus = False
+						else:
+							affinitiesColTable.append(col)
+					elif(col == "-"):
+						minus = True
+					numberOfColumn += 1
+				else:	
+					affinitiesTable.append(affinitiesColTable)
 			numberOfLine += 1
 		f.close
 		self.numberOfPeople = int(float(self.numberOfPeople))
 		self.numberOfTable = int(float(self.numberOfTable))
-
+		print(affinitiesTable)
 		return affinitiesTable
 
 	"""This function return the initial repartition of people at each table."""
@@ -287,6 +280,7 @@ def randomized_maxvalue(problem, limit=100, callback=None):
     for step in range(limit):
     	if callback is not None:
     		callback(current)
+    	random.seed(42)
     	current = random.choice(fiveMaxValueTables(list(current.expand())))
     	wedding.actionsAlreadyDone.append(current.state.p)
     	wedding.actionsAlreadyDone.append(current.state.p.reverse())

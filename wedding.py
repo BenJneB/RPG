@@ -1,3 +1,4 @@
+"""Group #16 --- Fichefet Pierrick --- Daubry Benjamin"""
 #! /usr/bin/env python3
 ################################################################################
 #
@@ -38,7 +39,7 @@ class Wedding(Problem):
 			swappedPeople2 = lastState[peopleLine2][peopleCol2]
 			#if(lastPeople != [swappedPeople1,swappedPeople2] and lastPeople != [swappedPeople2,swappedPeople1]):
 			#if ([swappedPeople1,swappedPeople2] not in self.actionsAlreadyDone) and ([swappedPeople2,swappedPeople1] not in self.actionsAlreadyDone):
-			newState = clone(lastState)
+			newState = cloneState(lastState)
 			newState[peopleLine1][peopleCol1] = swappedPeople2
 			newState[peopleLine2][peopleCol2] = swappedPeople1
 			newState[peopleLine1].sort()
@@ -116,9 +117,9 @@ class Wedding(Problem):
 			if (peopleLineIndex not in listOfSitPeople): # If peopleLineIndex have already been assigned don't need to assigne it again.
 				for Affinity in lineAffinities:
 					if(peopleLineIndex != peopleColIndex and peopleColIndex not in listOfSitPeople):
-						if(Affinity not in keysAffinity): 					# If this affinity already exist we 
-							dicoOfNoSitPeople[Affinity]=[peopleColIndex] 	# need to add a new people in the dictionnary at this key
-						else:												# Otherwise we add this people at this new key.
+						if(Affinity not in keysAffinity): 					# If this affinity already exist we need to add a new people
+							dicoOfNoSitPeople[Affinity]=[peopleColIndex] 	# in the dictionnary at this key Otherwise we add this people at
+						else:												# this new key.
 							dicoOfNoSitPeople[Affinity].append(peopleColIndex)
 					peopleColIndex+=1
 					keysAffinity = list(dicoOfNoSitPeople.keys())
@@ -127,11 +128,11 @@ class Wedding(Problem):
 				for elem in keysAffinity:
 					orderedAffinities.append(int(float(elem))) # We want to order int not string.
 				orderedAffinities.sort(reverse=True) 
-				numberOfPeople = 1 # peopleLineIndex have already been assigned so just need to find tableMaxPeople-1 peoples. 
-				key = 0
 				tablesAssignment.append([])
 				tablesAssignment[tableIndex].append(peopleLineIndex)
 				listOfSitPeople.append(peopleLineIndex)
+				numberOfPeople = 1 # peopleLineIndex have already been assigned so just need to find tableMaxPeople-1 peoples. 
+				key = 0
 				while (numberOfPeople < tableMaxPeople):						# taking all people having best affinities 
 					for elem in dicoOfNoSitPeople[str(orderedAffinities[key])]:	# with peopleLineIndex
 						if (numberOfPeople < tableMaxPeople):
@@ -214,7 +215,7 @@ class LSNode:
 # Auxiliary Function #
 ######################
 
-def clone(List):
+def cloneState(List):
 	cloneList = []
 	for line in List:
 		cloneList.append(list(line))
@@ -231,14 +232,14 @@ def maxValueTable(listNodes):
 		table1 = node.state.tables[action[0][0]]
 		table2 = node.state.tables[action[1][0]]
 		if(firstElem.state.value == node.state.value and firstTable1+firstTable2 > table1+table2):
-			if(listNodes2[0].state.value == 490 or listNodes2[0].state.value == 491):
-				print(firstTable1+firstTable2,">",table1+table2,firstTable1+firstTable2 > table1+table2)
+			#if(listNodes2[0].state.value == 490 or listNodes2[0].state.value == 491):
+			#	print(firstTable1+firstTable2,">",table1+table2,firstTable1+firstTable2 > table1+table2)
 			firstElem = node
 			firstTable1 = table1
 			firstTable2 = table2
 		elif(firstElem.state.value != node.state.value):
 			break
-	printState(firstElem.state)
+	#printState(firstElem.state)
 	return firstElem
 
 def fiveMaxValueTables(listNodes):
@@ -298,7 +299,7 @@ def maxvalue(problem, limit=100, callback=None):
     for step in range(limit):
     	if callback is not None:
     		callback(current)
-    	print("##############steeeeeeeeep####################"" = ",step)
+    	#print("##############steeeeeeeeep####################"" = ",step)
     	current = maxValueTable(list(current.expand()))
     	#print(current.state.value)
     	#print(current.state.p)
@@ -317,7 +318,7 @@ if __name__ == '__main__':
 	node = maxvalue(wedding)
 	interval = time.time()-start_time
 	printState(node.state)
-	#print(interval)
+	print(interval)
 
 	#node2 = randomized_maxvalue(wedding, 100)	
 	#printState(node2.state)
