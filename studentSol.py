@@ -17,7 +17,36 @@ def get_clauses(merchant, level):
 		# disjunction of all the equipment pieces the merchant proposes), you should write:
 		# 
 		# clauses.append(tuple(equ.index for equ in merchant.equipments))
-		clauses = []
+		equipement=merchant.equipments
+		abiNeeded=level.ability_names
+		listN=[]
+		listName=[]
+		for abiN in abiNeeded:
+			listTemp=[]
+			listTemp2=[]
+			for equip in equipement:
+				provide=equip.provides
+				for e in provide:
+					if(abiN == str(e)):
+						listTemp.append(equip.index)
+						listTemp2.append(equip)
+			if(len(listTemp)!=0):
+				listN.append(tuple(listTemp))
+				listName.append(tuple(listTemp2))
+		#print(listN)
+		#print(listName)
+		listCon=[]
+		for e in listName:
+			listTemp=[]
+			for conflict in e:
+				listTemp.append((conflict.index,conflict.conflicts.index))
+			listCon=listCon+listTemp
+
+		print(listCon)
+		#print(len(listCon))
+
+		clauses = listN[:]+listCon[:]
+		#print(clauses)
 		return clauses
 
 def get_nb_vars(merchant, level):
@@ -26,5 +55,30 @@ def get_nb_vars(merchant, level):
 		# For example, if your clauses contain all the equipments proposed by merchant and
 		# all the abilities provided by these equipment, you would have:
 		# nb_vars = len(merchant.abilities) + len(merchant.equipments)
-		nb_vars = 0
+		i=0
+		equipement=merchant.equipments
+		abiNeeded=level.ability_names
+		listName=[]
+		listbis=[]
+		for abiN in abiNeeded:
+			listTemp=[]
+			for equip in equipement:
+				provide=equip.provides
+				for e in provide:
+					if(abiN == str(e)):
+						listTemp.append(equip)
+						if equip not in listbis:
+							listbis.append(equip)
+							i+=1
+			if(len(listTemp)!=0):
+				listName.append(tuple(listTemp))
+
+		for e in listName:
+			for conflict in e:
+				if conflict.conflicts not in listbis:
+					i+=1
+
+
+		#print(i)
+		nb_vars = i
 		return nb_vars
