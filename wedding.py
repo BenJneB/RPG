@@ -314,7 +314,7 @@ if __name__ == '__main__':
 	node = maxvalue(wedding)
 	interval = time.time()-start_time
 	printState(node.state)
-	#print(interval)
+	print(interval)
 
 	#node2 = randomized_maxvalue(wedding, 100)	
 	#printState(node2.state)
