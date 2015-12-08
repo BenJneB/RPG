@@ -30,7 +30,6 @@ class Wedding(Problem):
 		lastPeople = state.p
 		lastState = state.tables
 		for action in actionList:
-			#if action not in self.actionsAlreadyDone:
 			peopleLine1 = action[0][0]
 			peopleCol1 = action[0][1]
 			peopleLine2 = action[1][0]
@@ -38,13 +37,13 @@ class Wedding(Problem):
 			swappedPeople1 = lastState[peopleLine1][peopleCol1]
 			swappedPeople2 = lastState[peopleLine2][peopleCol2]
 			#if(lastPeople != [swappedPeople1,swappedPeople2] and lastPeople != [swappedPeople2,swappedPeople1]):
-			if ([swappedPeople1,swappedPeople2] not in self.actionsAlreadyDone) and ([swappedPeople2,swappedPeople1] not in self.actionsAlreadyDone):
-				newState = clone(lastState)
-				newState[peopleLine1][peopleCol1] = swappedPeople2
-				newState[peopleLine2][peopleCol2] = swappedPeople1
-				newState[peopleLine1].sort()
-				newState[peopleLine2].sort()
-				yield [self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
+			#if ([swappedPeople1,swappedPeople2] not in self.actionsAlreadyDone) and ([swappedPeople2,swappedPeople1] not in self.actionsAlreadyDone):
+			newState = clone(lastState)
+			newState[peopleLine1][peopleCol1] = swappedPeople2
+			newState[peopleLine2][peopleCol2] = swappedPeople1
+			newState[peopleLine1].sort()
+			newState[peopleLine2].sort()
+			yield [self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
 
 	def value(self, state):
 		affinitiesTable = self.affinitiesTable
@@ -232,11 +231,14 @@ def maxValueTable(listNodes):
 		table1 = node.state.tables[action[0][0]]
 		table2 = node.state.tables[action[1][0]]
 		if(firstElem.state.value == node.state.value and firstTable1+firstTable2 > table1+table2):
+			if(listNodes2[0].state.value == 490 or listNodes2[0].state.value == 491):
+				print(firstTable1+firstTable2,">",table1+table2,firstTable1+firstTable2 > table1+table2)
 			firstElem = node
 			firstTable1 = table1
 			firstTable2 = table2
 		elif(firstElem.state.value != node.state.value):
 			break
+	printState(firstElem.state)
 	return firstElem
 
 def fiveMaxValueTables(listNodes):
@@ -296,6 +298,7 @@ def maxvalue(problem, limit=100, callback=None):
     for step in range(limit):
     	if callback is not None:
     		callback(current)
+    	print("##############steeeeeeeeep####################"" = ",step)
     	current = maxValueTable(list(current.expand()))
     	#print(current.state.value)
     	#print(current.state.p)
