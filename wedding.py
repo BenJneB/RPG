@@ -333,10 +333,10 @@ if __name__ == '__main__':
 	initState = State(wedding.initial[0],wedding.initial[1],wedding.initial[2],wedding.initial[3], wedding.value(wedding.initial[3]))
 	printState(initState)
 
-	#node = maxvalue(wedding, 100)
-	#printState(node.state)
+	node = maxvalue(wedding, 100)
+	printState(node.state)
 
-	node2 = randomized_maxvalue(wedding, 100)	
-	printState(node2.state)
+	#node2 = randomized_maxvalue(wedding, 100)	
+	#printState(node2.state)
 	#state = node.state
 	#print(state)
