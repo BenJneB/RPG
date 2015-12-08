@@ -44,7 +44,6 @@ class Wedding(Problem):
 				newState[peopleLine2][peopleCol2] = swappedPeople1
 				newState[peopleLine1].sort()
 				newState[peopleLine2].sort()
-				#if(not(self.value(newState) < lastValue-30)):
 				yield [self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
 
 	def value(self, state):
@@ -232,36 +231,37 @@ def maxValueTable(listNodes):
 		action = node.state.m
 		table1 = node.state.tables[action[0][0]]
 		table2 = node.state.tables[action[1][0]]
-		if( firstElem.state.value == node.state.value and firstTable1+firstTable2 > table1+table2):
+		if(firstElem.state.value == node.state.value and firstTable1+firstTable2 > table1+table2):
 			firstElem = node
 			firstTable1 = table1
 			firstTable2 = table2
-		else:
+		elif(firstElem.state.value != node.state.value):
 			break
 	return firstElem
 
 def fiveMaxValueTables(listNodes):
 	listNodes2 = sorted(listNodes,key=lambda a:a.state.value,reverse = True)
 	listElem = []
-	ListtElem.append(listNodes2[0])
-	firstElem = listNodes2[0]
-	firstAction = firstElem.state.m
-	firstTable1 = firstElem.state.tables[firstAction[0][0]]
-	firstTable2 = firstElem.state.tables[firstAction[1][0]]
 	i = 0
+	j = 0
 	for node in listNodes2:
-		action = node.state.m
-		table1 = node.state.tables[action[0][0]]
-		table2 = node.state.tables[action[1][0]]
-		if( firstElem.state.value == node.state.value and i < 5):
-			ListElem.append(node)
-			firstElem = node
-			firstTable1 = table1
-			firstTable2 = table2
+		if(i < 5):
+			listElem.append(node)
+			if(listElem[i].state.value != listElem[j].state.value):
+				j = i
+		elif (listElem[4].state.value == node.state.value):
+			listElem.append(node)
 		else:
 			break
 		i+=1
-	return firstElem
+
+	if(len(listElem) == 5):
+		return listElem
+	
+	bestTable1 = listElem[j:len(listElem)]
+	bestTable2 = sorted(bestTable1,key=lambda a:a.state.tables[a.state.m[0][0]]+a.state.tables[a.state.m[1][0]],reverse = True)
+
+	return listElem[0:j]+bestTable2[j:len(bestTable2)]
 
 def printState(state):
 	print(state.value)
@@ -297,8 +297,8 @@ def maxvalue(problem, limit=100, callback=None):
     	if callback is not None:
     		callback(current)
     	current = maxValueTable(list(current.expand()))
-    	print(current.state.value)
-    	print(current.state.p)
+    	#print(current.state.value)
+    	#print(current.state.p)
     	wedding.actionsAlreadyDone.append(current.state.p)
     	wedding.actionsAlreadyDone.append(current.state.p.reverse())
     	if current.state.value > best.state.value:
@@ -314,7 +314,7 @@ if __name__ == '__main__':
 	node = maxvalue(wedding)
 	interval = time.time()-start_time
 	printState(node.state)
-	print(interval)
+	#print(interval)
 
 	#node2 = randomized_maxvalue(wedding, 100)	
 	#printState(node2.state)

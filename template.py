@@ -6,6 +6,7 @@
 ################################################################################
 from search import *
 import sys
+import time
 
 #################
 # Problem class #
@@ -26,21 +27,24 @@ class Wedding(Problem):
 		actionList = self.allPossibleActions
 		lastValue = state.value
 		lastAction = state.m
+		lastPeople = state.p
 		lastState = state.tables
 		for action in actionList:
-			#if action not in self.actionsAlreadyDone:
-			if action != lastAction: # Don't want to do the action than the last one. Avoiding loop.
-				peopleLine1 = action[0][0]
-				peopleCol1 = action[0][1]
-				peopleLine2 = action[1][0]
-				peopleCol2 = action[1][1]
-				swappedPeople1 = lastState[peopleLine1][peopleCol1]
-				swappedPeople2 = lastState[peopleLine2][peopleCol2]
+			peopleLine1 = action[0][0]
+			peopleCol1 = action[0][1]
+			peopleLine2 = action[1][0]
+			peopleCol2 = action[1][1]
+			swappedPeople1 = lastState[peopleLine1][peopleCol1]
+			swappedPeople2 = lastState[peopleLine2][peopleCol2]
+			if(lastPeople != [swappedPeople1,swappedPeople2] and lastPeople != [swappedPeople2,swappedPeople1]):
+			#if ([swappedPeople1,swappedPeople2] not in self.actionsAlreadyDone) and ([swappedPeople2,swappedPeople1] not in self.actionsAlreadyDone):
 				newState = clone(lastState)
 				newState[peopleLine1][peopleCol1] = swappedPeople2
 				newState[peopleLine2][peopleCol2] = swappedPeople1
-				if(not(self.value(newState) < lastValue-30)):
-					yield [self.numberOfPeople,self.numberOfTable,action,newState]
+				newState[peopleLine1].sort()
+				newState[peopleLine2].sort()
+				#if(not(self.value(newState) < lastValue-30)):
+				yield [self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
 
 	def value(self, state):
 		affinitiesTable = self.affinitiesTable
@@ -140,7 +144,7 @@ class Wedding(Problem):
 				tablesAssignment[tableIndex].sort()
 				tableIndex += 1
 			peopleLineIndex += 1
-		self.initial = (self.numberOfPeople, self.numberOfTable, [[0,0],[0,0]],tablesAssignment)
+		self.initial = (self.numberOfPeople, self.numberOfTable, [[0,0],[0,0]],[0,0],tablesAssignment)
 
 	"""Return all possible actions, An action is a 2-uple containing the row and column of peoples who are going to be swapped"""
 	"""action = [[row1,column1],[row2,column2]]"""
@@ -170,10 +174,11 @@ class Wedding(Problem):
 
 class State:
 
-	def __init__(self, n, t, m, tables, value):
+	def __init__(self, n, t, m, p, tables, value):
 		self.n = n
 		self.t = t
 		self.m = m
+		self.p = p
 		self.tables = tables
 		self.value = value
 
@@ -203,8 +208,8 @@ class LSNode:
 
     def expand(self):
         """Yields nodes reachable from this node. [Fig. 3.8]"""
-        for (numberOfPeople,numberOfTable,move,tablesAssignment) in self.problem.successor(self.state):
-            yield LSNode(self.problem, State(numberOfPeople, numberOfTable, move, tablesAssignment, self.problem.value(tablesAssignment)), self.step + 1)
+        for (numberOfPeople,numberOfTable,move,people,tablesAssignment) in self.problem.successor(self.state):
+            yield LSNode(self.problem, State(numberOfPeople, numberOfTable, move, people,tablesAssignment, self.problem.value(tablesAssignment)), self.step + 1)
 
 ######################
 # Auxiliary Function #
@@ -217,77 +222,50 @@ def clone(List):
 	return cloneList
 
 def maxValueTable(listNodes):
-	firstRun = True
-	maxValueTable = None
-	for node in listNodes:
-		state = node.state
-		if(firstRun):
-			maxValueTable = node
-			firstRun = False
-		elif (maxValueTable.state.value < state.value):
-			maxValueTable = node
-		elif (maxValueTable.state.value == state.value):
-			choice = random.choice([maxValueTable,node])
-			maxValueTable = choice
-	return maxValueTable
-
-def partition(listNodes, start, end):
-    pivot = listNodes[end] 
-    pivotValue = pivot.state.value                    # Partition around the last value
-    bottom = start-1                           # Start outside the area to be partitioned
-    top = end                                  # Ditto
-
-    done = 0
-    while not done:                            # Until all elements are partitioned...
-
-        while not done:                        # Until we find an out of place element...
-            bottom = bottom+1                  # ... move the bottom up.
-
-            if bottom == top:                  # If we hit the top...
-                done = 1                       # ... we are done.
-                break
-
-            if listNodes[bottom].state.value > pivotValue:           # Is the bottom out of place?
-                listNodes[top] = listNodes[bottom]       		# Then put it at the top...
-                break                          					# ... and start searching from the top.
-
-        while not done:                        # Until we find an out of place element...
-            top = top-1                        # ... move the top down.
-            
-            if top == bottom:                  # If we hit the bottom...
-                done = 1                       # ... we are done.
-                break
-
-            if listNodes[top].state.value < pivotValue:              # Is the top out of place?
-                listNodes[bottom] = listNodes[top]       		# Then put it at the bottom...
-                break                          					# ...and start searching from the bottom.
-
-    listNodes[top] = pivot                 		# Put the pivot in its place.
-    return top                                 # Return the split point
-
-
-def quicksort(listNodes,start,end):
-    if start < end:                            # If there are two or more elements...
-        split = partition(listNodes, start, end)    # ... partition the sublist...
-        quicksort(listNodes, start, split-1)        # ... and sort both halves.
-        quicksort(listNodes, split+1, end)
-    else:
-        return
+	listNodes2 = sorted(listNodes,key=lambda a:a.state.value,reverse = True)
+	firstElem = listNodes2[0]
+	firstAction = firstElem.state.m
+	firstTable1 = firstElem.state.tables[firstAction[0][0]]
+	firstTable2 = firstElem.state.tables[firstAction[1][0]]
+	for node in listNodes2:
+		action = node.state.m
+		if(action[0][0] < action[1][0]):
+			table1 = node.state.tables[action[0][0]]
+			table2 = node.state.tables[action[1][0]]
+		else:
+			table1 = node.state.tables[action[1][0]]
+			table2 = node.state.tables[action[0][0]]
+		if( firstElem.state.value == node.state.value and firstTable1+firstTable2 > table1+table2):
+			firstElem = node
+			firstTable1 = table1
+			firstTable2 = table2
+		else:
+			break
+	return firstElem
 
 def fiveMaxValueTables(listNodes):
-	firstRun = True
-	maxValueTables = []
-	for node in listNodes:
-		state = node.state
-		if (len(maxValueTables) < 5):
-			maxValueTables.append(node)
-		elif(maxValueTables[0].state.value < state.value):
-			maxValueTables[0] = node
-		elif(maxValueTables[0].state.value == state.value):
-			choice = random.choice([node,maxValueTables[0]])
-			maxValueTables[0] = choice
-		quicksort(maxValueTables,0,len(maxValueTables)-1)
-	return maxValueTables
+	listNodes2 = sorted(listNodes,key=lambda a:a.state.value,reverse = True)
+	listElem = []
+	i = 0
+	j = 0
+	for node in listNodes2:
+		if(i < 5):
+			listElem.append(node)
+			if(listElem[i].state.value != listElem[j].state.value):
+				j = i
+		elif (listElem[4].state.value == node.state.value):
+			listElem.append(node)
+		else:
+			break
+		i+=1
+
+	if(len(listElem) == 5):
+		return listElem
+	
+	bestTable1 = listElem[j:len(listElem)]
+	bestTable2 = sorted(bestTable1,key=lambda a:a.state.tables[a.state.m[0][0]]+a.state.tables[a.state.m[1][0]],reverse = True)
+
+	return listElem[0:j]+bestTable2[j:len(bestTable2)]
 
 def printState(state):
 	print(state.value)
@@ -303,40 +281,47 @@ def printState(state):
 ################
 
 def randomized_maxvalue(problem, limit=100, callback=None):
-    currentState = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3], problem.value(problem.initial[3]))
+    currentState = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3],problem.initial[4], problem.value(problem.initial[4]))
     current = LSNode(problem, currentState, 0)
     best = current
     for step in range(limit):
     	if callback is not None:
     		callback(current)
     	current = random.choice(fiveMaxValueTables(list(current.expand())))
-    	wedding.actionsAlreadyDone.append(current.state.m)
+    	wedding.actionsAlreadyDone.append(current.state.p)
+    	wedding.actionsAlreadyDone.append(current.state.p.reverse())
     	if current.state.value > best.state.value:
     		best = current
     return best
 
 def maxvalue(problem, limit=100, callback=None):
-    currentState = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3], problem.value(problem.initial[3]))
+    currentState = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3],problem.initial[4], problem.value(problem.initial[4]))
     current = LSNode(problem, currentState, 0)
     best = current
     for step in range(limit):
     	if callback is not None:
     		callback(current)
     	current = maxValueTable(list(current.expand()))
-    	wedding.actionsAlreadyDone.append(current.state.m)
+    	print(current.state.value)
+    	print(current.state.p)
+    	wedding.actionsAlreadyDone.append(current.state.p)
+    	wedding.actionsAlreadyDone.append(current.state.p.reverse())
     	if current.state.value > best.state.value:
     		best = current
     return best
 
 if __name__ == '__main__':
 	wedding = Wedding(sys.argv[1])
-	initState = State(wedding.initial[0],wedding.initial[1],wedding.initial[2],wedding.initial[3], wedding.value(wedding.initial[3]))
+	initState = State(wedding.initial[0],wedding.initial[1],wedding.initial[2],wedding.initial[3],wedding.initial[4], wedding.value(wedding.initial[4]))
 	printState(initState)
 
-	#node = maxvalue(wedding, 100)
+	#node = maxvalue(wedding)
 	#printState(node.state)
 
-	node2 = randomized_maxvalue(wedding, 100)	
+	start_time = time.time()
+	node2 = randomized_maxvalue(wedding)
+	interval = time.time()-start_time	
 	printState(node2.state)
+	print(interval)
 	#state = node.state
 	#print(state)
