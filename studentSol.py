@@ -19,34 +19,27 @@ def get_clauses(merchant, level):
 		# clauses.append(tuple(equ.index for equ in merchant.equipments))
 		equipement=merchant.equipments
 		abiNeeded=level.ability_names
-		listN=[]
-		listName=[]
+		abi=merchant.abilities
+		clauses=[]
+		listEquip2=[]
 		for abiN in abiNeeded:
-			listTemp=[]
-			listTemp2=[]
-			for equip in equipement:
-				provide=equip.provides
-				for e in provide:
-					if(abiN == str(e)):
-						listTemp.append(equip.index)
-						listTemp2.append(equip)
-			if(len(listTemp)!=0):
-				listN.append(tuple(listTemp))
-				listName.append(tuple(listTemp2))
-		#print(listN)
-		#print(listName)
-		listCon=[]
-		for e in listName:
-			listTemp=[]
-			for conflict in e:
-				listTemp.append((conflict.index,conflict.conflicts.index))
-			listCon=listCon+listTemp
+			for abiI in abi:
+				if abiN==abiI.name:
+					clauses.append([abiI.index])
+					useful=[]
+					useful.append(-abiI.index)
+					for equip in abiI.provided_by:
+						useful.append(equip.index)
+						if(equip not in listEquip2):
+							listEquip2.append(equip)
+					clauses.append(useful)
 
-		print(listCon)
-		#print(len(listCon))
+		for equip in listEquip2:
+			clauses.append([-equip.index,-equip.conflicts.index])
+			for abi in equip.provides:
+				clauses.append([-equip.index,abi.index])
 
-		clauses = listN[:]+listCon[:]
-		#print(clauses)
+		print(clauses)
 		return clauses
 
 def get_nb_vars(merchant, level):
@@ -58,27 +51,19 @@ def get_nb_vars(merchant, level):
 		i=0
 		equipement=merchant.equipments
 		abiNeeded=level.ability_names
-		listName=[]
-		listbis=[]
+		abi=merchant.abilities
+		listEquip2=[]
 		for abiN in abiNeeded:
-			listTemp=[]
-			for equip in equipement:
-				provide=equip.provides
-				for e in provide:
-					if(abiN == str(e)):
-						listTemp.append(equip)
-						if equip not in listbis:
-							listbis.append(equip)
-							i+=1
-			if(len(listTemp)!=0):
-				listName.append(tuple(listTemp))
-
-		for e in listName:
-			for conflict in e:
-				if conflict.conflicts not in listbis:
+			for abiI in abi:
+				if abiN==str(abiI):
 					i+=1
+					for equip in abiI.provided_by:
+						if equip not in listEquip2:
+							i+=1
+							listEquip2.append(equip)
 
-
-		#print(i)
+		for equip in listEquip2:
+			if(equip.conflicts not in listEquip2):
+				i+=1
 		nb_vars = i
 		return nb_vars
