@@ -25,8 +25,6 @@ class Wedding(Problem):
 
 	def successor(self, state):
 		successors = []
-		listOfSonsValues = []
-		count = 0
 		actionList = self.allPossibleActions
 		lastValue = state.value
 		lastAction = state.m
@@ -47,13 +45,7 @@ class Wedding(Problem):
 			newState[peopleLine1].sort()
 			newState[peopleLine2].sort()
 			newValue = quickValue(state,newState,action)
-			if(count == 0):
-				listOfSonsValues.append(newValue)
-			elif(newValue > max(listOfSonsValues)):
-				listOfSonsValues.append(newValue)
-			if((newValue in listOfSonsValues) or (count < 5)):
-				yield [state,self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
-			count += 1
+			yield (action,State(self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],state,newState,newValue))
 
 	def value(self, state):
 		affinitiesTable = self.affinitiesTable
@@ -183,35 +175,6 @@ class State:
 		self.tables = tables
 		self.value = value
 
-###############
-# LSNode class #
-###############
-
-class LSNode:
-    """A node in a local search. You will not need to subclass this class 
-        for local search."""
-
-    def __init__(self, problem, state, step):
-        """Create a local search Node."""
-        self.problem = problem
-        self.state = state
-        self.step = step
-        self._value = None
-
-    def __repr__(self):
-        return "<Node %s>" % (self.state,)
-
-    def value(self):
-        """Returns the value of the state contained in this node."""
-        if self._value is None:
-            self._value = self.problem.value(self.state)
-        return self._value
-
-    def expand(self):
-        """Yields nodes reachable from this node. [Fig. 3.8]"""
-        for (oldState,numberOfPeople,numberOfTable,move,people,tablesAssignment) in self.problem.successor(self.state):
-            yield LSNode(self.problem, State(numberOfPeople, numberOfTable, move, people, oldState, tablesAssignment, quickValue(oldState,tablesAssignment,move)), self.step + 1)
-
 ######################
 # Auxiliary Function #
 ######################
@@ -301,19 +264,18 @@ def printState(state):
 def randomized_maxvalue(problem, limit=100, callback=None):
     current = LSNode(problem, problem.initial, 0)
     best = current
+    random.seed(42)
     for step in range(limit):
     	if callback is not None:
     		callback(current)
     	oldNode = current.state.oldState
-    	print("SSSSSSSSSSTEEEEEEEEEEEEEEEPPPPPPPPPPPPP = ",step)
-    	random.seed(42)
-    	for elem in fiveMaxValueTables(list(current.expand())):
-    		print(elem.state.value)
-    		print(concatAllTables(elem.state.tables))
+    	#print("SSSSSSSSSSTEEEEEEEEEEEEEEEPPPPPPPPPPPPP = ",step)
+    	#for elem in fiveMaxValueTables(list(current.expand())):
+    	#	print(elem.state.value)
+    	#	print(concatAllTables(elem.state.tables))
     	current = random.choice(fiveMaxValueTables(list(current.expand())))
     	if(step != 0):
     		if(current.state.tables == oldNode.tables):
-    			print(current.step)
     			break
     	wedding.actionsAlreadyDone.append(current.state.p)
     	wedding.actionsAlreadyDone.append(current.state.p.reverse())
@@ -340,6 +302,22 @@ def maxvalue(problem, limit=100, callback=None):
     		best = current
     return best
 
+def random_walk(problem, limit=100, callback=None):
+    """Perform a random walk in the search space and return the best solution
+    found. The returned value is a Node.
+    If callback is not None, it must be a one-argument function that will be
+    called at each step with the current node.
+    """
+    current = LSNode(problem, problem.initial, 0)
+    best = current
+    for step in range(limit):
+        if callback is not None:
+            callback(current)
+        current = random.choice(list(current.expand()))
+        if current.state.value > best.state.value:
+            best = current
+    return best
+
 if __name__ == '__main__':
 	wedding = Wedding(sys.argv[1])
 	printState(wedding.initial)
@@ -349,6 +327,7 @@ if __name__ == '__main__':
 	#node2 = random_walk(wedding)	
 	interval = time.time()-start_time
 	printState(node2.state)
+	print("step =",node2.step)
 	print(interval)
 
 	#node = maxvalue(wedding)
