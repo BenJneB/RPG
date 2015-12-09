@@ -174,11 +174,12 @@ class Wedding(Problem):
 
 class State:
 
-	def __init__(self, n, t, m, p, tables, value):
+	def __init__(self, n, t, m, p, oldState, tables, value):
 		self.n = n
 		self.t = t
 		self.m = m
 		self.p = p
+		self.oldState = oldState
 		self.tables = tables
 		self.value = value
 
@@ -209,11 +210,17 @@ class LSNode:
     def expand(self):
         """Yields nodes reachable from this node. [Fig. 3.8]"""
         for (oldState,numberOfPeople,numberOfTable,move,people,tablesAssignment) in self.problem.successor(self.state):
-            yield LSNode(self.problem, State(numberOfPeople, numberOfTable, move, people, tablesAssignment, quickValue(oldState,tablesAssignment,move)), self.step + 1)
+            yield LSNode(self.problem, State(numberOfPeople, numberOfTable, move, people, oldState, tablesAssignment, quickValue(oldState,tablesAssignment,move)), self.step + 1)
 
 ######################
 # Auxiliary Function #
 ######################
+
+def concatAllTables(tables):
+	compareList = []
+	for table in tables:
+		compareList += table
+	return compareList
 
 def quickValue(oldState,newTables,action):
 	oldValue = oldState.value
@@ -245,22 +252,14 @@ def cloneState(List):
 def maxValueTable(listNodes):
 	listNodes2 = sorted(listNodes,key=lambda a:a.state.value,reverse = True)
 	firstElem = listNodes2[0]
-	firstAction = firstElem.state.m
-	firstTable1 = firstElem.state.tables[firstAction[0][0]]
-	firstTable2 = firstElem.state.tables[firstAction[1][0]]
+	compareTables1 = concatAllTables(firstElem.state.tables)
 	for node in listNodes2:
-		action = node.state.m
-		table1 = node.state.tables[action[0][0]]
-		table2 = node.state.tables[action[1][0]]
-		if(firstElem.state.value == node.state.value and firstTable1+firstTable2 > table1+table2):
-			#if(listNodes2[0].state.value == 490 or listNodes2[0].state.value == 491):
-			#	print(firstTable1+firstTable2,">",table1+table2,firstTable1+firstTable2 > table1+table2)
+		compareTables2 = concatAllTables(node.state.tables)
+		if( firstElem.state.value == node.state.value and compareTables1 > compareTables2):
 			firstElem = node
-			firstTable1 = table1
-			firstTable2 = table2
+			compareTables1 = compareTables2
 		elif(firstElem.state.value != node.state.value):
 			break
-	#printState(firstElem.state)
 	return firstElem
 
 def fiveMaxValueTables(listNodes):
@@ -314,16 +313,19 @@ def randomized_maxvalue(problem, limit=100, callback=None):
     return best
 
 def maxvalue(problem, limit=100, callback=None):
-    currentState = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3],problem.initial[4], problem.value(problem.initial[4]))
+    currentState = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3],None,problem.initial[4], problem.value(problem.initial[4]))
     current = LSNode(problem, currentState, 0)
     best = current
+    first = True
     for step in range(limit):
     	if callback is not None:
     		callback(current)
-    	#print("##############steeeeeeeeep####################"" = ",step)
+    	oldNode = current.state.oldState
     	current = maxValueTable(list(current.expand()))
-    	#print(current.state.p)
-    	#printState(current.state)
+    	if(step != 0):
+    		if(current.state.tables == oldNode.tables):
+    			print(current.step)
+    			break
     	wedding.actionsAlreadyDone.append(current.state.p)
     	wedding.actionsAlreadyDone.append(current.state.p.reverse())
     	if (current.state.value > best.state.value):
@@ -332,7 +334,7 @@ def maxvalue(problem, limit=100, callback=None):
 
 if __name__ == '__main__':
 	wedding = Wedding(sys.argv[1])
-	initState = State(wedding.initial[0],wedding.initial[1],wedding.initial[2],wedding.initial[3],wedding.initial[4], wedding.value(wedding.initial[4]))
+	initState = State(wedding.initial[0],wedding.initial[1],wedding.initial[2],wedding.initial[3],None,wedding.initial[4], wedding.value(wedding.initial[4]))
 	printState(initState)
 
 	start_time = time.time()
