@@ -144,7 +144,7 @@ class Wedding(Problem):
 				tablesAssignment[tableIndex].sort()
 				tableIndex += 1
 			peopleLineIndex += 1
-		self.initial = (self.numberOfPeople, self.numberOfTable, [[0,0],[0,0]],[0,0],tablesAssignment)
+		self.initial = State(self.numberOfPeople,self.numberOfTable,[[0,0],[0,0]],[0,0],None,tablesAssignment, self.value(tablesAssignment))
 
 	"""Return all possible actions, An action is a 2-uple containing the row and column of peoples who are going to be swapped"""
 	"""action = [[row1,column1],[row2,column2]]"""
@@ -282,9 +282,8 @@ def fiveMaxValueTables(listNodes):
 		return listElem
 	
 	bestTable1 = listElem[j:len(listElem)]
-	bestTable2 = sorted(bestTable1,key=lambda a:a.state.tables[a.state.m[0][0]]+a.state.tables[a.state.m[1][0]],reverse = True)
-
-	return listElem[0:j]+bestTable2[j:len(bestTable2)]
+	bestTable2 = sorted(bestTable1,key=lambda a:concatAllTables(a.state.tables),reverse = False)
+	return listElem[0:j]+bestTable2[0:5-j]
 
 def printState(state):
 	print(state.value)
@@ -300,21 +299,25 @@ def printState(state):
 ################
 
 def randomized_maxvalue(problem, limit=100, callback=None):
-    currentState = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3],problem.initial[4], problem.value(problem.initial[4]))
-    current = LSNode(problem, currentState, 0)
+    current = LSNode(problem, problem.initial, 0)
     best = current
     for step in range(limit):
     	if callback is not None:
     		callback(current)
+    	print("SSSSSSSSSSTEEEEEEEEEEEEEEEPPPPPPPPPPPPP = ",step)
+    	random.seed(42)
+    	for elem in fiveMaxValueTables(list(current.expand())):
+    		print(elem.state.value)
+    		print(concatAllTables(elem.state.tables))
     	current = random.choice(fiveMaxValueTables(list(current.expand())))
-    	wedding.actionsAlreadyDone.append(current.state.m)
+    	wedding.actionsAlreadyDone.append(current.state.p)
+    	wedding.actionsAlreadyDone.append(current.state.p.reverse())
     	if current.state.value > best.state.value:
     		best = current
     return best
 
 def maxvalue(problem, limit=100, callback=None):
-    currentState = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3],None,problem.initial[4], problem.value(problem.initial[4]))
-    current = LSNode(problem, currentState, 0)
+    current = LSNode(problem, problem.initial, 0)
     best = current
     first = True
     for step in range(limit):
@@ -334,8 +337,7 @@ def maxvalue(problem, limit=100, callback=None):
 
 if __name__ == '__main__':
 	wedding = Wedding(sys.argv[1])
-	initState = State(wedding.initial[0],wedding.initial[1],wedding.initial[2],wedding.initial[3],None,wedding.initial[4], wedding.value(wedding.initial[4]))
-	printState(initState)
+	printState(wedding.initial)
 
 	start_time = time.time()
 	node = maxvalue(wedding)

@@ -144,7 +144,7 @@ class Wedding(Problem):
 				tablesAssignment[tableIndex].sort()
 				tableIndex += 1
 			peopleLineIndex += 1
-		self.initial = (self.numberOfPeople, self.numberOfTable, [[0,0],[0,0]],[0,0],tablesAssignment)
+		self.initial = State(self.numberOfPeople,self.numberOfTable,[[0,0],[0,0]],[0,0],None,tablesAssignment, self.value(tablesAssignment))
 
 	"""Return all possible actions, An action is a 2-uple containing the row and column of peoples who are going to be swapped"""
 	"""action = [[row1,column1],[row2,column2]]"""
@@ -299,8 +299,7 @@ def printState(state):
 ################
 
 def randomized_maxvalue(problem, limit=100, callback=None):
-    currentState = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3],None,problem.initial[4], problem.value(problem.initial[4]))
-    current = LSNode(problem, currentState, 0)
+    current = LSNode(problem, problem.initial, 0)
     best = current
     for step in range(limit):
     	if callback is not None:
@@ -323,8 +322,7 @@ def randomized_maxvalue(problem, limit=100, callback=None):
     return best
 
 def maxvalue(problem, limit=100, callback=None):
-    currentState = State(problem.initial[0],problem.initial[1],problem.initial[2],problem.initial[3],None,problem.initial[4], problem.value(problem.initial[4]))
-    current = LSNode(problem, currentState, 0)
+    current = LSNode(problem, problem.initial, 0)
     best = current
     first = True
     for step in range(limit):
@@ -344,11 +342,11 @@ def maxvalue(problem, limit=100, callback=None):
 
 if __name__ == '__main__':
 	wedding = Wedding(sys.argv[1])
-	initState = State(wedding.initial[0],wedding.initial[1],wedding.initial[2],wedding.initial[3],None,wedding.initial[4], wedding.value(wedding.initial[4]))
-	printState(initState)
+	printState(wedding.initial)
 
 	start_time = time.time()
-	node2 = randomized_maxvalue(wedding, 100)	
+	node2 = randomized_maxvalue(wedding, 100)
+	#node2 = random_walk(wedding)	
 	interval = time.time()-start_time
 	printState(node2.state)
 	print(interval)
