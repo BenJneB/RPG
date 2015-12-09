@@ -25,6 +25,8 @@ class Wedding(Problem):
 
 	def successor(self, state):
 		successors = []
+		listOfSonsValues = []
+		count = 0
 		actionList = self.allPossibleActions
 		lastValue = state.value
 		lastAction = state.m
@@ -44,7 +46,14 @@ class Wedding(Problem):
 			newState[peopleLine2][peopleCol2] = swappedPeople1
 			newState[peopleLine1].sort()
 			newState[peopleLine2].sort()
-			yield [self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
+			newValue = quickValue(state,newState,action)
+			if(count == 0):
+				listOfSonsValues.append(newValue)
+			elif(newValue > max(listOfSonsValues)):
+				listOfSonsValues.append(newValue)
+			if((newValue in listOfSonsValues) or (count < 5)):
+				yield [state,self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
+			count += 1
 
 	def value(self, state):
 		affinitiesTable = self.affinitiesTable
@@ -68,36 +77,27 @@ class Wedding(Problem):
 		for line in f:
 			affinitiesColTable = []
 			minus = False # check Whether we have a negative value or not.
-			for col in line:
-				if(col != " " and col != '\n' and col != "-"):
-					if(minus):
-						affinitiesColTable.append("-"+col)
-						minus = False
-					else:
-						affinitiesColTable.append(col)
-				elif(col == "-"):
-					minus = True
-				numberOfColumn += 1
-
-			if (numberOfLine == 0): # Save the number of people
-				self.numberOfPeople = affinitiesColTable[0]
-				i=1
-				while(i<len(affinitiesColTable)):
-					self.numberOfPeople += affinitiesColTable[i]
-					i += 1
-			elif (numberOfLine == 1): # Save the number of table
-				self.numberOfTable = affinitiesColTable[0]
-				i=1
-				while(i<len(affinitiesColTable)):
-					self.numberOfTable += affinitiesColTable[i]
-					i += 1
-			else:	
-				affinitiesTable.append(affinitiesColTable)
+			if(numberOfLine == 0):
+				self.numberOfPeople = line
+			elif(numberOfLine == 1):
+				self.numberOfTable = line
+			else:
+				for col in line:
+					if(col != " " and col != '\n' and col != "-"):
+						if(minus):
+							affinitiesColTable.append("-"+col)
+							minus = False
+						else:
+							affinitiesColTable.append(col)
+					elif(col == "-"):
+						minus = True
+					numberOfColumn += 1
+				else:	
+					affinitiesTable.append(affinitiesColTable)
 			numberOfLine += 1
 		f.close
 		self.numberOfPeople = int(float(self.numberOfPeople))
 		self.numberOfTable = int(float(self.numberOfTable))
-
 		return affinitiesTable
 
 	"""This function return the initial repartition of people at each table."""
@@ -208,12 +208,33 @@ class LSNode:
 
     def expand(self):
         """Yields nodes reachable from this node. [Fig. 3.8]"""
-        for (numberOfPeople,numberOfTable,move,people,tablesAssignment) in self.problem.successor(self.state):
-            yield LSNode(self.problem, State(numberOfPeople, numberOfTable, move, people,tablesAssignment, self.problem.value(tablesAssignment)), self.step + 1)
+        for (oldState,numberOfPeople,numberOfTable,move,people,tablesAssignment) in self.problem.successor(self.state):
+            yield LSNode(self.problem, State(numberOfPeople, numberOfTable, move, people, tablesAssignment, quickValue(oldState,tablesAssignment,move)), self.step + 1)
 
 ######################
 # Auxiliary Function #
 ######################
+
+def quickValue(oldState,newTables,action):
+	oldValue = oldState.value
+	oldTable1 = oldState.tables[action[0][0]]
+	oldTable2 = oldState.tables[action[1][0]]
+	newTable1 = newTables[action[0][0]]
+	newTable2 = newTables[action[1][0]]
+	oldTableValue = singleTableValue(oldTable1) + singleTableValue(oldTable2) 
+	newTableValue = singleTableValue(newTable1) + singleTableValue(newTable2)
+	return oldValue - oldTableValue + newTableValue
+
+def singleTableValue(table):
+	affinitiesTable = wedding.affinitiesTable
+	tableMaxPeople = wedding.numberOfPeople/wedding.numberOfTable
+	value = 0
+	for people in table:
+		peopleIndex = 0
+		while(peopleIndex < tableMaxPeople):
+			value += int(float(affinitiesTable[people][table[peopleIndex]]))
+			peopleIndex += 1
+	return value
 
 def cloneState(List):
 	cloneList = []
@@ -301,11 +322,11 @@ def maxvalue(problem, limit=100, callback=None):
     		callback(current)
     	#print("##############steeeeeeeeep####################"" = ",step)
     	current = maxValueTable(list(current.expand()))
-    	#print(current.state.value)
     	#print(current.state.p)
+    	#printState(current.state)
     	wedding.actionsAlreadyDone.append(current.state.p)
     	wedding.actionsAlreadyDone.append(current.state.p.reverse())
-    	if current.state.value > best.state.value:
+    	if (current.state.value > best.state.value):
     		best = current
     return best
 

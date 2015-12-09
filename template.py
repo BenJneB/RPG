@@ -25,6 +25,8 @@ class Wedding(Problem):
 
 	def successor(self, state):
 		successors = []
+		listOfSonsValues = []
+		count = 0
 		actionList = self.allPossibleActions
 		lastValue = state.value
 		lastAction = state.m
@@ -39,13 +41,19 @@ class Wedding(Problem):
 			swappedPeople2 = lastState[peopleLine2][peopleCol2]
 			#if(lastPeople != [swappedPeople1,swappedPeople2] and lastPeople != [swappedPeople2,swappedPeople1]):
 			#if ([swappedPeople1,swappedPeople2] not in self.actionsAlreadyDone) and ([swappedPeople2,swappedPeople1] not in self.actionsAlreadyDone):
-			newState = clone(lastState)
+			newState = cloneState(lastState)
 			newState[peopleLine1][peopleCol1] = swappedPeople2
 			newState[peopleLine2][peopleCol2] = swappedPeople1
 			newState[peopleLine1].sort()
 			newState[peopleLine2].sort()
-			#if(not(self.value(newState) < lastValue-30)):
-			yield [self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
+			newValue = quickValue(state,newState,action)
+			if(count == 0):
+				listOfSonsValues.append(newValue)
+			elif(newValue > max(listOfSonsValues)):
+				listOfSonsValues.append(newValue)
+			if((newValue in listOfSonsValues) or (count < 5)):
+				yield [state,self.numberOfPeople,self.numberOfTable,action,[swappedPeople1,swappedPeople2],newState]
+			count += 1
 
 	def value(self, state):
 		affinitiesTable = self.affinitiesTable
@@ -90,7 +98,6 @@ class Wedding(Problem):
 		f.close
 		self.numberOfPeople = int(float(self.numberOfPeople))
 		self.numberOfTable = int(float(self.numberOfTable))
-		print(affinitiesTable)
 		return affinitiesTable
 
 	"""This function return the initial repartition of people at each table."""
@@ -110,9 +117,9 @@ class Wedding(Problem):
 			if (peopleLineIndex not in listOfSitPeople): # If peopleLineIndex have already been assigned don't need to assigne it again.
 				for Affinity in lineAffinities:
 					if(peopleLineIndex != peopleColIndex and peopleColIndex not in listOfSitPeople):
-						if(Affinity not in keysAffinity): 					# If this affinity already exist we 
-							dicoOfNoSitPeople[Affinity]=[peopleColIndex] 	# need to add a new people in the dictionnary at this key
-						else:												# Otherwise we add this people at this new key.
+						if(Affinity not in keysAffinity): 					# If this affinity already exist we need to add a new people
+							dicoOfNoSitPeople[Affinity]=[peopleColIndex] 	# in the dictionnary at this key Otherwise we add this people at
+						else:												# this new key.
 							dicoOfNoSitPeople[Affinity].append(peopleColIndex)
 					peopleColIndex+=1
 					keysAffinity = list(dicoOfNoSitPeople.keys())
@@ -121,11 +128,11 @@ class Wedding(Problem):
 				for elem in keysAffinity:
 					orderedAffinities.append(int(float(elem))) # We want to order int not string.
 				orderedAffinities.sort(reverse=True) 
-				numberOfPeople = 1 # peopleLineIndex have already been assigned so just need to find tableMaxPeople-1 peoples. 
-				key = 0
 				tablesAssignment.append([])
 				tablesAssignment[tableIndex].append(peopleLineIndex)
 				listOfSitPeople.append(peopleLineIndex)
+				numberOfPeople = 1 # peopleLineIndex have already been assigned so just need to find tableMaxPeople-1 peoples. 
+				key = 0
 				while (numberOfPeople < tableMaxPeople):						# taking all people having best affinities 
 					for elem in dicoOfNoSitPeople[str(orderedAffinities[key])]:	# with peopleLineIndex
 						if (numberOfPeople < tableMaxPeople):
@@ -201,12 +208,33 @@ class LSNode:
 
     def expand(self):
         """Yields nodes reachable from this node. [Fig. 3.8]"""
-        for (numberOfPeople,numberOfTable,move,people,tablesAssignment) in self.problem.successor(self.state):
-            yield LSNode(self.problem, State(numberOfPeople, numberOfTable, move, people,tablesAssignment, self.problem.value(tablesAssignment)), self.step + 1)
+        for (oldState,numberOfPeople,numberOfTable,move,people,tablesAssignment) in self.problem.successor(self.state):
+            yield LSNode(self.problem, State(numberOfPeople, numberOfTable, move, people, tablesAssignment, quickValue(oldState,tablesAssignment,move)), self.step + 1)
 
 ######################
 # Auxiliary Function #
 ######################
+
+def quickValue(oldState,newTables,action):
+	oldValue = oldState.value
+	oldTable1 = oldState.tables[action[0][0]]
+	oldTable2 = oldState.tables[action[1][0]]
+	newTable1 = newTables[action[0][0]]
+	newTable2 = newTables[action[1][0]]
+	oldTableValue = singleTableValue(oldTable1) + singleTableValue(oldTable2) 
+	newTableValue = singleTableValue(newTable1) + singleTableValue(newTable2)
+	return oldValue - oldTableValue + newTableValue
+
+def singleTableValue(table):
+	affinitiesTable = wedding.affinitiesTable
+	tableMaxPeople = wedding.numberOfPeople/wedding.numberOfTable
+	value = 0
+	for people in table:
+		peopleIndex = 0
+		while(peopleIndex < tableMaxPeople):
+			value += int(float(affinitiesTable[people][table[peopleIndex]]))
+			peopleIndex += 1
+	return value
 
 def clone(List):
 	cloneList = []
